@@ -1,19 +1,18 @@
 # main.py
 from contextlib import asynccontextmanager
-from typing import Union, Optional, Annotated
+from typing import Optional, Annotated
 from sqlmodel import Field, Session, SQLModel, create_engine, select, Sequence
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from typing import AsyncGenerator
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 import asyncio
 import json
-from app import todo_pb2
 
 from app import settings
 from app.db_engine import engine
 from app.models.product_model import Product
 from app.crud.product_crud import add_new_product, get_all_products
-
+from app.deps import get_session, get_kafka_producer
 
 def create_db_and_tables() -> None:
     SQLModel.metadata.create_all(engine)
@@ -66,7 +65,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(
     lifespan=lifespan,
-    title="Hello World API with DB",
+    title="Hello World API with Kafka DB",
     version="0.0.1",
 )
 
@@ -102,8 +101,18 @@ async def create_new_product(product: Product, session: Annotated[Session, Depen
     # new_product = add_new_product(product, session)
     return product
 
+ @app.get("/manage-products/all", response_model=list[Product])
+ def get_all_product(session: Annotated[Session, Depends(get_session)]):
+     """get all product by data-base """
+        return get_all_products(session)
 
-# @app.get("/todos/", response_model=list[Todo])
-# def read_todos(session: Annotated[Session, Depends(get_session)]):
-#     todos = session.exec(select(Todo)).all()
-#     return todos
+ @app.get("/manage-products/{product_id}", response_model=list[Product])
+ def get_single_product(product_id:int, session: Annotated[Session, Depends(get_session)]):
+     """get a single product by id """
+     try:
+        return get_products_by_id(product_id=product_id, session=session)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, details=str(e))
+
