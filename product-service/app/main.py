@@ -101,18 +101,17 @@ async def create_new_product(product: Product, session: Annotated[Session, Depen
     # new_product = add_new_product(product, session)
     return product
 
- @app.get("/manage-products/all", response_model=list[Product])
- def get_all_product(session: Annotated[Session, Depends(get_session)]):
-     """get all product by data-base """
-        return get_all_products(session)
+@app.get("/manage-products/all", response_model=list[Product])
+def get_all_product(session: Annotated[Session, Depends(get_session)]):
+    """get all product by data-base """
+    return get_all_products(session)
 
- @app.get("/manage-products/{product_id}", response_model=list[Product])
- def get_single_product(product_id:int, session: Annotated[Session, Depends(get_session)]):
-     """get a single product by id """
-     try:
+@app.get("/manage-products/{product_id}", response_model=list[Product])
+def get_single_product(product_id:int, session: Annotated[Session, Depends(get_session)]):
+    """get a single product by id """
+    try:
         return get_products_by_id(product_id=product_id, session=session)
     except HTTPException as e:
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, details=str(e))
-

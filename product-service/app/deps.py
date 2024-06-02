@@ -1,3 +1,4 @@
+from ensurepip import bootstrap
 from aiokafka import AIOKafkaProducer
 from sqlmodel import Session
 from app.db_engine import engine
